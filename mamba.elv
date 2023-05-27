@@ -64,7 +64,7 @@ fn process-script {|@in|
 				var p2 = (str:trim $parts[1] "'\"")
 				try { set-env $p1 $p2 } catch { echo "Cannot set-env" }
 			}
-		} elif (eq $line[0] ".") { # source line
+		} elif (eq $line[0] ".") { # source line to a file
 			var p = (str:trim $line[1] '"')
 			if (cmds:is-file $p) {
 				try {
