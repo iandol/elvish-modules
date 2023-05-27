@@ -35,7 +35,7 @@
 use str
 use re
 use path
-use cmds # my utility module
+use ./cmds # my utility module
 
 var root = $E:HOME/micromamba # can be reassigned after module load
 var envs = $root/envs
