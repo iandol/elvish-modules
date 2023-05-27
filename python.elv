@@ -11,7 +11,7 @@
 
 use ./cmds
 
-var venv-directory = $E:HOME/.venvs
+var venv-directory = $E:HOME/.venv
 
 fn activate {|name|
 	var venvs = [(ls $venv-directory)]
