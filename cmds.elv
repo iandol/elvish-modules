@@ -125,6 +125,16 @@ fn prepend-to-path { |path|
 fn remove-from-path { |pathfragment|
 	set paths = [(filter-re-out (re:quote $pathfragment) $paths)]
 }
+# do-if-path [paths] { code } -- executes code with first existing path (can be a list)
+fn do-if-path { |paths func~|
+	var match = $false
+	each {|p| 
+		if (and (is-path $p) (eq $match $false)) {
+			set match = $true
+			func $p
+		} 
+	} $paths
+}
 # check-paths -- checks all paths are valid
 fn check-paths {
 	each {|p| if (not (is-path $p)) { remove-from-path $p; echo (styled "🥺—"$p" in $paths no longer exists…" bg-red) } } $paths

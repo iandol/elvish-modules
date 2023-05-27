@@ -39,7 +39,7 @@ use ./cmds # my utility module
 
 var root = $E:HOME/micromamba # can be reassigned after module load
 var envs = $root/envs
-var venvs = []; try { set venvs = [(e:ls $envs)] } catch { }
+var venvs; try { set venvs = [(e:ls $envs)] } catch { }
 
 # =========================== get envs path via current $root
 fn get-envs-path {
