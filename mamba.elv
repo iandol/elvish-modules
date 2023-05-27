@@ -69,7 +69,13 @@ fn process-script {|@in|
 			if (cmds:is-file $p) {
 				try {
 					var @newin = (e:cat $p | from-lines)
-					#echo 'process-script: ' $newin
+					# TODO: we can process the script but often this uses
+					#zsh-specific variables and these will not translate
+					#over. Options are to use a zsh script that can evaluate
+					#expressions then return the completed text back to
+					#elvish? 
+					
+					#process-script $newin
 				} catch {
 					echo "Cannot source "$p
 				}
