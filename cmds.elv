@@ -128,9 +128,9 @@ fn remove-from-path { |pathfragment|
 # do-if-path [paths] { code } -- executes code with first existing path (should be a list)
 fn do-if-path { |paths func~|
 	var match = $false
-	if (not (cmds:is-list $paths)) { set paths = [$paths] }
+	if (not (is-list $paths)) { set paths = [$paths] }
 	each {|p|
-		if (and (cmds:is-path $p) (eq $match $false)) {
+		if (and (is-path $p) (eq $match $false)) {
 			set match = $true
 			func $p
 		} 
