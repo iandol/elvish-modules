@@ -14,7 +14,7 @@ use ./cmds
 var venv-directory = $E:HOME/.venv
 
 fn activate {|name|
-	var venvs = [(ls $venv-directory)]
+	var venvs = [(e:ls $venv-directory)]
 
 	var error = ?(var confirmed-name = (
 		each {|venv|
@@ -36,9 +36,7 @@ fn activate {|name|
 	}
 }
 
-set edit:completion:arg-completer[python:activate] = {|@args|
-	e:ls $venv-directory
-}
+set edit:completion:arg-completer[python:activate] = {|@args| e:ls $venv-directory }
 
 fn deactivate {
 	if (cmds:not-empty $E:_OLD_VIRTUAL_PATH) {
@@ -57,5 +55,5 @@ fn deactivate {
 }
 
 fn list-venvs {
-	all [(ls $venv-directory)]
+	all [(e:ls $venv-directory)]
 }

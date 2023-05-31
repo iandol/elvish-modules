@@ -84,18 +84,18 @@ fn listify { |@in| # test to take either stdin or pipein
 }
 
 ################################################ list functions
-fn prepend { |li args| put (put $@args $@li) }
-fn append  { |li args| put (put $@li $@args) }
-fn concat  { |l1 l2| put (flatten $l1) (flatten $l2) }
-fn pluck   { |li n| put (flatten $li[..$n]) (flatten $li[(inc $n)..]) }
-fn get     { |li n| put $li[$n] } # put A B C D | cmds:get [(all)] 1
-fn first   { |li| put $li[0] }
-fn firstf  { |li| first [(flatten $li)] }
-fn second  { |li| put $li[1] }
-fn rest    { |li| put $li[1..] }
-fn end     { |li| put $li[-1] }
-fn butlast { |li| put $li[..(dec (count $li))] }
-fn nth     { |li n &not-found=$false|
+fn prepend	{ |li args| put (put $@args $@li) }
+fn append	{ |li args| put (put $@li $@args) }
+fn concat	{ |l1 l2| put (flatten $l1) (flatten $l2) }
+fn pluck	{ |li n| put (flatten $li[..$n]) (flatten $li[(inc $n)..]) }
+fn get		{ |li n| put $li[$n] } # put A B C D | cmds:get [(all)] 1
+fn first	{ |li| put $li[0] }
+fn firstf	{ |li| first [(flatten $li)] }
+fn second	{ |li| put $li[1] }
+fn rest		{ |li| put $li[1..] }
+fn end		{ |li| put $li[-1] }
+fn butlast	{ |li| put $li[..(dec (count $li))] }
+fn nth		{ |li n &not-found=$false|
 	if (and $not-found (> $n (count $li))) {
 		put $not-found
 	} else {

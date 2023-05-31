@@ -39,7 +39,7 @@ use ./cmds # my utility module
 
 var root = $E:HOME/micromamba # can be reassigned after module load
 var envs = $root/envs
-var venvs; try { set venvs = [(e:ls $envs)] } catch { }
+var venvs; try { set venvs = [(e:ls $envs 2>$path:dev-null)] } catch { }
 
 # =========================== get envs path via current $root
 fn get-envs-path {
@@ -49,7 +49,7 @@ fn get-envs-path {
 # =========================== get envs 
 fn get-venvs {
 	get-envs-path
-	try { set venvs = [(e:ls $envs)] } catch { echo "Cannot list envs…" }
+	try { set venvs = [(e:ls $envs 2>$path:dev-null)] } catch { echo "Cannot list envs…" }
 }
 
 # =========================== process a zsh script (what mamba returns) for export or source
@@ -67,18 +67,17 @@ fn process-script {|@in|
 		} elif (eq $line[0] ".") { # source line to a file
 			var p = (str:trim $line[1] '"')
 			if (cmds:is-file $p) {
-				try {
-					var @newin = (e:cat $p | from-lines)
-					# TODO: we can process the script but often this uses
-					#zsh-specific variables and these will not translate
-					#over. Options are to use a zsh script that can evaluate
-					#expressions then return the completed text back to
-					#elvish? 
-					
-					#process-script $newin
-				} catch {
-					echo "Cannot source "$p
-				}
+				# try {
+				# 	var @newin = (e:cat $p | from-lines)
+				# 	# TODO: we can process the script but often this uses
+				# 	#zsh-specific variables and these will not translate
+				# 	#over. Options are to use a zsh script that can evaluate
+				# 	#expressions then return the completed text back to
+				# 	#elvish? 
+				# 	#process-script $newin
+				# } catch {
+				# 	echo "Cannot source "$p
+				# }
 			} else {
 				echo "File not found: "$p
 			}
@@ -136,7 +135,4 @@ fn activate {|name|
 		echo (styled "Mamba Environment « "$name" » Activated!" bold italic magenta)
 	} else { echo "Environment "$name" not found." }
 }
-set edit:completion:arg-completer[mamba:activate] = {|@args|
-	get-envs
-	e:ls $envs
-}
+set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs; e:ls $envs }
