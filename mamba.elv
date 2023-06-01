@@ -135,4 +135,4 @@ fn activate {|name|
 		echo (styled "Mamba Environment « "$name" » Activated!" bold italic magenta)
 	} else { echo "Environment "$name" not found." }
 }
-set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs; put $venvs }
+set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs; put $@venvs }
