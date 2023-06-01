@@ -39,17 +39,17 @@ use ./cmds # my utility module
 
 var root = $E:HOME/micromamba # can be reassigned after module load
 var envs = $root/envs
-var venvs; try { set venvs = [(e:ls $envs 2>$path:dev-null)] } catch { }
+var venvs = []
 
-# =========================== get envs path via current $root
+# =========================== get envs path from current $root
 fn get-envs-path {
 	set envs = $root/envs
 }
 
-# =========================== get envs 
+# =========================== get envs
 fn get-venvs {
 	get-envs-path
-	try { set venvs = [(e:ls $envs 2>$path:dev-null)] } catch { echo "Cannot list envs…" }
+	try { set venvs = [(each {|p| path:base $p } [$envs/*])] } catch { set venvs = []; echo "Cannot list envs…" }
 }
 
 # =========================== process a zsh script (what mamba returns) for export or source
@@ -135,4 +135,4 @@ fn activate {|name|
 		echo (styled "Mamba Environment « "$name" » Activated!" bold italic magenta)
 	} else { echo "Environment "$name" not found." }
 }
-set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs; e:ls $envs }
+set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs; put $venvs }
