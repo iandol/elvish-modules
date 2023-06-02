@@ -38,23 +38,14 @@ use path
 use ./cmds # my utility module
 
 var root = $E:HOME/micromamba # can be reassigned after module load
-var envs = $root/envs
-var venvs = []
-
-# =========================== get envs path from current $root
-fn get-envs-path {
-	set envs = $root/envs
-}
 
 # =========================== get envs
-fn get-venvs {
-	get-envs-path
-	try { set venvs = [(each {|p| path:base $p } [$envs/*])] } catch { set venvs = []; echo "Cannot list envs…" }
+fn get-venvs { 
+	try { each {|p| path:base $p } [$root/envs/*] } catch { put [] } 
 }
 
 # =========================== process a zsh script (what mamba returns) for export or source
 fn process-script {|@in|
-	get-venvs
 	each {|line|
 		set @line = (str:split " " $line)
 		if (eq $line[0] "export") { # export line
@@ -87,14 +78,12 @@ fn process-script {|@in|
 
 # =========================== list environments
 fn list {
+	echo "Mamba ENVS in "$root"envs: "
 	get-venvs
-	echo "Mamba ENVS in "$envs": "
-	put $@venvs
 }
 
 # =========================== deactivate function
 fn deactivate {
-	get-venvs
 	var in = []
 	try { var in = [(micromamba shell deactivate -s zsh)] } catch { }
 	if (cmds:not-empty $in) { process-script $in }
@@ -117,14 +106,13 @@ fn deactivate {
 
 # =========================== activate function
 fn activate {|name|
-	get-venvs
-	if (cmds:is-member $venvs $name) {
+	if (cmds:is-member [(get-venvs)] $name) {
 		deactivate # lets deactivate first
 		set-env '_OLD_PATH' $E:PATH
 		var in = []
 		try { set in = [(micromamba shell activate -s zsh $name)] } catch { }
 		if (cmds:not-empty $in) { process-script $in }
-		set-env CONDA_PREFIX $envs/$name
+		set-env CONDA_PREFIX $root/envs/$name
 		set-env CONDA_DEFAULT_ENV $name
 		cmds:prepend-to-path $root/condabin
 		cmds:prepend-to-path $E:CONDA_PREFIX/bin
@@ -135,4 +123,4 @@ fn activate {|name|
 		echo (styled "Mamba Environment « "$name" » Activated!" bold italic magenta)
 	} else { echo "Environment "$name" not found." }
 }
-set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs; put $@venvs }
+set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs }
