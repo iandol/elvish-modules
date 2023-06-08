@@ -78,7 +78,7 @@ fn process-script {|@in|
 
 # =========================== list environments
 fn list {
-	echo "Mamba ENVS in "$root"envs: "
+	echo "Mamba ENVS in "$root"/envs: "
 	get-venvs
 }
 
