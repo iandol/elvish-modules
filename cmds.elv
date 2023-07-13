@@ -28,8 +28,8 @@ fn neg			{|n| < $n 0 }
 # inspired by https://github.com/crinklywrappr/rivendell 
 fn is-empty		{|li| == (count $li) 0 }
 fn not-empty	{|li| not (== (count $li) 0) }
-fn is-member	{|li s| not-eq	$ok ?(each {|it| if (re:match $s $it) { return } } $li) }
-fn not-member	{|li s| eq		$ok ?(each {|it| if (re:match $s $it) { return } } $li) }
+fn is-member	{|li s| not-eq	$ok ?(each {|it| if (eq $s $it) { return } } $li) }
+fn not-member	{|li s| eq		$ok ?(each {|it| if (eq $s $it) { return } } $li) }
 fn is-match		{|s re| re:match $re $s }
 fn not-match	{|s re| not (re:match $re $s) }
 fn is-zero		{|n| == 0 $n }
@@ -102,7 +102,7 @@ fn nth		{ |li n &not-found=$false|
 		drop $n $li | take 1
 	}
 }
-fn listdiff {|a b| # diff two lists
+fn list-diff	{ |a b| # diff two lists
 	var c = [(order [$@a $@b])]
 	var j = 0; var lastindex = (- (count $c) 1)
 	for i $c {
@@ -114,6 +114,21 @@ fn listdiff {|a b| # diff two lists
 			if (not (or (eq $i $c[(- $j 1)]) (eq $i $c[(+ $j 1)]) )) { put $i }
 		}
 		set j = (+ $j 1)
+	}
+}
+fn list-unique	{ |li| put (flatten $li) | to-lines | e:sort | e:uniq - | from-lines }
+fn list-intersect { |a b|
+	for i $b {
+		if (is-member $a $i) {
+			put $i
+		}
+	}
+}
+fn list-filter { |a b|
+	for i $b {
+		if (not-member $a $i) {
+			put $i
+		}
 	}
 }
 
