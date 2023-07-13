@@ -2,7 +2,7 @@
 #
 ## Copyright © 2023
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.01
+#   Version: 1.02
 #   This file is licensed under the terms of the MIT license.
 #
 # Activation & deactivation methods for working with Mamba virtual
@@ -11,20 +11,21 @@
 #
 # Note: this script not only sets the path but tries to do a simple parse of
 # the zsh script that is returned from  `conda shel activate -s zsh [name]`
-# — for standard environment variables this is fine, but we can't handle
-# sourced extra scripts easily
+# — for standard environment variables this is fine. However, conda can also
+# run external scripts, and to solve that all we can do is to capture the
+# env before and after each script runs to work out what may be changing.
 #
-# > mamba:root — variable to store the mamba/conda root folder
-# > mamba:list — lists all environments in the envs folder of the root folder 
-# > mamba:activate — activates an environment (tab autocomplete should work here)
-# > mamba:deactivate — deactivates an environment  
+# > mamba:root — variable to store the mamba/conda root folder mamba:list —
+# > lists all environments in the envs folder of the root folder
+# > mamba:activate — activates an environment (tab autocomplete should work
+# > here) mamba:deactivate — deactivates an environment  
 #
 # Example:
 # ```
 # ~> use mamba
 # ~> set mamba:root = ~/micromamba
 # ~> mamba:list
-# Mamba ENVS in /Users/ian/micromamba/envs: 
+# Mamba ENVS in /Users/jdoe/micromamba/envs: 
 # ▶ octave
 # ▶ pupil
 # ▶ test
@@ -39,8 +40,10 @@ use ./cmds # my utility module
 
 var root = $E:HOME/micromamba # can be reassigned after module load
 
-# =========================== use zsh to find differences in env after running command
-fn set-zsh-envs { |script| 
+# =========================== spawn zsh and find differences in env after
+# =========================== running script, then set-env those
+# =========================== zsh-processed variables
+fn set-zsh-envs { |script|
 	var x = [(eval 'zsh -c "fe=$(env|sort);. '$script';ne=$(env|sort);echo $fe;echo ''=+=+='';echo $ne"')]
 	var n = (cmds:list-find $x '=+=+=')
 	var a = $x[0..$n]
@@ -52,12 +55,12 @@ fn set-zsh-envs { |script|
 	}
 }
 
-# =========================== get envs
+# =========================== get conda/mamba envs
 fn get-venvs { 
 	try { each {|p| path:base $p } [$root/envs/*] } catch { put [] } 
 }
 
-# =========================== process a zsh script (what mamba returns) for export or source
+# =========================== process zsh script (what mamba returns) for export or source
 fn process-script {|@in|
 	each {|line|
 		set @line = (str:split " " $line)
