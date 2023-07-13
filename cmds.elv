@@ -130,9 +130,15 @@ fn list-intersect { |a b|
 # list-changed [a b c d] [c d e f] = [e f]
 fn list-changed { |a b|
 	for i $b {
-		if (not-member $a $i) {
-			put $i
-		}
+		if (not-member $a $i) { put $i }
+	}
+}
+# find the index in the list of the item s
+fn list-find { |li s|
+	var n = 0
+	for i $li {
+		if (eq $i $s) { put $n }
+		set n = (+ $n 1)
 	}
 }
 

@@ -39,6 +39,19 @@ use ./cmds # my utility module
 
 var root = $E:HOME/micromamba # can be reassigned after module load
 
+# =========================== use zsh to find differences in env after running command
+fn set-zsh-envs { |script| 
+	var x = [(eval 'zsh -c "fe=$(env|sort);. '$script';ne=$(env|sort);echo $fe;echo ''=+=+='';echo $ne"')]
+	var n = (cmds:list-find $x '=+=+=')
+	var a = $x[0..$n]
+	var b = $x[(+ $n 1)..-1]
+	var zenvs = [(cmds:list-changed $a $b)]
+	for e $zenvs {
+		var p = [(str:split '=' $e)]
+		if (not-empty $p) { set-env $p[0] $p[1]; echo "Set: "$p[0]"="$p[1] }
+	}
+}
+
 # =========================== get envs
 fn get-venvs { 
 	try { each {|p| path:base $p } [$root/envs/*] } catch { put [] } 
@@ -55,20 +68,15 @@ fn process-script {|@in|
 				var p2 = (str:trim $parts[1] "'\"")
 				try { set-env $p1 $p2 } catch { echo "Cannot set-env" }
 			}
-		} elif (eq $line[0] ".") { # source line to a file
+		} elif (or (eq $line[0] ".") (eq $line[0] "source") ) { # source line to a file
 			var p = (str:trim $line[1] '"')
 			if (cmds:is-file $p) {
-				# try {
-				# 	var @newin = (e:cat $p | from-lines)
-				# 	# TODO: we can process the script but often this uses
-				# 	#zsh-specific variables and these will not translate
-				# 	#over. Options are to use a zsh script that can evaluate
-				# 	#expressions then return the completed text back to
-				# 	#elvish? 
-				# 	#process-script $newin
-				# } catch {
-				# 	echo "Cannot source "$p
-				# }
+				try {
+					echo "Running zsh script: "$p
+					set-zsh-envs $p
+				} catch {
+					echo "Cannot source "$p
+				}
 			} else {
 				echo "File not found: "$p
 			}
@@ -124,3 +132,4 @@ fn activate {|name|
 	} else { echo "Environment "$name" not found." }
 }
 set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs }
+
