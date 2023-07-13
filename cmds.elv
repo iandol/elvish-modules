@@ -102,7 +102,10 @@ fn nth		{ |li n &not-found=$false|
 		drop $n $li | take 1
 	}
 }
-fn list-diff	{ |a b| # diff two lists
+# list unique [c b b a] = [a b c]
+fn list-unique	{ |li| put (flatten $li) | to-lines | e:sort | e:uniq - | from-lines }
+# list-diff [a b c d] [c d e f] = [a b e f]
+fn list-diff	{ |a b|
 	var c = [(order [$@a $@b])]
 	var j = 0; var lastindex = (- (count $c) 1)
 	for i $c {
@@ -116,7 +119,7 @@ fn list-diff	{ |a b| # diff two lists
 		set j = (+ $j 1)
 	}
 }
-fn list-unique	{ |li| put (flatten $li) | to-lines | e:sort | e:uniq - | from-lines }
+# list-intersect [a b c d] [c d e f] = [c d]
 fn list-intersect { |a b|
 	for i $b {
 		if (is-member $a $i) {
@@ -124,7 +127,8 @@ fn list-intersect { |a b|
 		}
 	}
 }
-fn list-filter { |a b|
+# list-changed [a b c d] [c d e f] = [e f]
+fn list-changed { |a b|
 	for i $b {
 		if (not-member $a $i) {
 			put $i
