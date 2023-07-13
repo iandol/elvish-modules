@@ -48,7 +48,7 @@ fn set-zsh-envs { |script|
 	var zenvs = [(cmds:list-changed $a $b)]
 	for e $zenvs {
 		var p = [(str:split '=' $e)]
-		if (not-empty $p) { set-env $p[0] $p[1]; echo "Set: "$p[0]"="$p[1] }
+		if (cmds:not-empty $p) { set-env $p[0] $p[1]; echo "Set: "$p[0]"="$p[1] }
 	}
 }
 
@@ -74,8 +74,9 @@ fn process-script {|@in|
 				try {
 					echo "Running zsh script: "$p
 					set-zsh-envs $p
-				} catch {
+				} catch e {
 					echo "Cannot source "$p
+					pprint $e[reason]
 				}
 			} else {
 				echo "File not found: "$p
