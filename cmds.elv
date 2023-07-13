@@ -2,7 +2,7 @@
 #
 # Copyright © 2023
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.01
+#   Version: 1.02
 #   This file is licensed under the terms of the MIT license.
 
 use re
@@ -102,6 +102,20 @@ fn nth		{ |li n &not-found=$false|
 		drop $n $li | take 1
 	}
 }
+fn listdiff {|a b| # diff two lists
+	var c = [(order [$@a $@b])]
+	var j = 0; var lastindex = (- (count $c) 1)
+	for i $c {
+		if (eq $j 0) {
+			if (not (eq $i $c[(+ $j 1)])) { put $i }
+		} elif (== $j $lastindex) {
+			if (not (eq $i $c[(- $j 1)])) { put $i }
+		} else {
+			if (not (or (eq $i $c[(- $j 1)]) (eq $i $c[(+ $j 1)]) )) { put $i }
+		}
+		set j = (+ $j 1)
+	}
+}
 
 ################################################ Utils
 # if-external { a } { b } -- if external command exists run {a}, otherwise {b}
@@ -140,7 +154,7 @@ fn do-if-path { |paths func~|
 fn check-paths {
 	each {|p| if (not (is-path $p)) { remove-from-path $p; echo (styled "🥺—"$p" in $paths no longer exists…" bg-red) } } $paths
 }
-fn newelves { 
+fn elvish-updates { 
 	var sep = "----------------------------"
 	curl "https://api.github.com/repos/elves/elvish/commits?per_page=8" |
 	from-json |
@@ -157,11 +171,11 @@ fn hexstring { |@n|
 		put (repeat-each $@n { printf '%X' (randint 0 16) })
 	}
 }
-fn external_edit_command {
+fn external_edit_command { # edit current command in editor
 	var temp-file = (path:temp-file '*.elv')
 	print $edit:current-command > $temp-file
 	try {
-		vim $temp-file[name] </dev/tty >/dev/tty 2>&1
+		eval $E:EDITOR' '$temp-file[name]' </dev/tty >/dev/tty 2>&1'
 		set edit:current-command = (slurp < $temp-file[name])[..-1]
 	} catch {
 		file:close $temp-file
