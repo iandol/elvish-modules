@@ -2,7 +2,7 @@
 #
 ## Copyright © 2023
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.02
+#   Version: 1.03
 #   This file is licensed under the terms of the MIT license.
 #
 # Activation & deactivation methods for working with Mamba virtual
@@ -33,6 +33,7 @@
 # ~> mamba:deactivate
 # ```
 #
+
 use str
 use re
 use path
@@ -43,6 +44,7 @@ var root = $E:HOME/micromamba # can be reassigned after module load
 # =========================== spawn zsh and find differences in env after
 # =========================== running script, then set-env those
 # =========================== zsh-processed variables
+# =========================== TODO: backup any old values?
 fn set-zsh-envs { |script|
 	var x = [(eval 'zsh -c "fe=$(env|sort);. '$script';ne=$(env|sort);echo $fe;echo ''=+=+='';echo $ne"')]
 	var n = (cmds:list-find $x '=+=+=')
@@ -51,7 +53,10 @@ fn set-zsh-envs { |script|
 	var zenvs = [(cmds:list-changed $a $b)]
 	for e $zenvs {
 		var p = [(str:split '=' $e)]
-		if (cmds:not-empty $p) { set-env $p[0] $p[1]; echo "Set: "$p[0]"="$p[1] }
+		if (cmds:not-empty $p) {
+			set-env ZSH_MAMBA_ADD $p[0]'→'$E:ZSH_MAMBA_ADD
+			set-env $p[0] $p[1]
+		}
 	}
 }
 
@@ -99,7 +104,8 @@ fn deactivate {
 	var in = []
 	try { var in = [(micromamba shell deactivate -s zsh)] } catch { }
 	if (cmds:not-empty $in) { process-script $in }
-	each {|in| unset-env $in } [_THIS_ENV VIRTUAL_ENV MAMBA_ENV CONDA_DEFAULT_ENV CONDA_PREFIX CONDA_PROMPT_MODIFIER CONDA_SHLVL]
+	each {|in| unset-env $in } [(str:split '→' $E:ZSH_MAMBA_ADD)]
+	each {|in| unset-env $in } [ZSH_MAMBA_ADD _THIS_ENV VIRTUAL_ENV MAMBA_ENV CONDA_DEFAULT_ENV CONDA_PREFIX CONDA_PROMPT_MODIFIER CONDA_SHLVL]
 	var frag = (re:find '/[^/]+$' $root)
 	if (cmds:not-empty $frag[text]) {
 		echo (styled "• Removing paths with « "$frag[text]" »" italic magenta)
@@ -136,4 +142,3 @@ fn activate {|name|
 	} else { echo "Environment "$name" not found." }
 }
 set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs }
-
