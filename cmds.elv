@@ -2,7 +2,7 @@
 #
 # Copyright © 2023
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.02
+#   Version: 1.03
 #   This file is licensed under the terms of the MIT license.
 
 use re
@@ -28,10 +28,14 @@ fn neg			{|n| < $n 0 }
 # inspired by https://github.com/crinklywrappr/rivendell 
 fn is-empty		{|li| == (count $li) 0 }
 fn not-empty	{|li| not (== (count $li) 0) }
-fn is-member	{|li s| not-eq	$ok ?(each {|it| if (eq $s $it) { return } } $li) }
-fn not-member	{|li s| eq		$ok ?(each {|it| if (eq $s $it) { return } } $li) }
+fn is-member	{|li s| has-value $li $s }
+fn not-member	{|li s| not (has-value $li $s) }
 fn is-match		{|s re| re:match $re $s }
 fn not-match	{|s re| not (re:match $re $s) }
+fn is-path		{|p| path:is-dir &follow-symlink $p }
+fn not-path		{|p| not (is-path $p) }
+fn is-file		{|p| path:is-regular &follow-symlink $p }
+fn not-file		{|p| not (is-file $p) }
 fn is-zero		{|n| == 0 $n }
 fn is-one		{|n| == 1 $n }
 fn is-even		{|n| == (% $n 2) 0 }
@@ -43,10 +47,6 @@ fn is-string	{|x| eq (kind-of $x) string }
 fn is-bool		{|x| eq (kind-of $x) bool }
 fn is-number	{|x| eq (kind-of $x) !!float64 }
 fn is-nil		{|x| eq $x $nil }
-fn is-path		{|p| path:is-dir &follow-symlink $p }
-fn not-path		{|p| not (is-path $p) }
-fn is-file		{|p| path:is-regular &follow-symlink $p }
-fn not-file		{|p| not (is-file $p) }
 
 ################################################ filtering functions
 fn filter {|func~ @in|
@@ -102,24 +102,24 @@ fn nth		{ |li n &not-found=$false|
 		drop $n $li | take 1
 	}
 }
-# list unique [c b b a] = [a b c]
+# list unique: [c b b a] ===> [a b c]
 fn list-unique	{ |li| put (flatten $li) | to-lines | e:sort | e:uniq - | from-lines }
-# list-diff [a b c d] [c d e f] = [a b e f]
+# list-diff: [a b c d] [c d e f] ===> [a b e f]
 fn list-diff	{ |a b|
 	var c = [(order [$@a $@b])]
-	var j = 0; var lastindex = (- (count $c) 1)
+	var j = 0; var lastindex = (dec (count $c))
 	for i $c {
 		if (eq $j 0) {
-			if (not (eq $i $c[(+ $j 1)])) { put $i }
+			if (not (eq $i $c[(inc $j)])) { put $i }
 		} elif (== $j $lastindex) {
-			if (not (eq $i $c[(- $j 1)])) { put $i }
+			if (not (eq $i $c[(dec $j)])) { put $i }
 		} else {
-			if (not (or (eq $i $c[(- $j 1)]) (eq $i $c[(+ $j 1)]) )) { put $i }
+			if (not (or (eq $i $c[(dec $j)]) (eq $i $c[(inc $j)]) )) { put $i }
 		}
-		set j = (+ $j 1)
+		set j = (inc $j)
 	}
 }
-# list-intersect [a b c d] [c d e f] = [c d]
+# list-intersect: [a b c d] [c d e f] ===> [c d]
 fn list-intersect { |a b|
 	for i $b {
 		if (is-member $a $i) {
@@ -127,13 +127,13 @@ fn list-intersect { |a b|
 		}
 	}
 }
-# list-changed [a b c d] [c d e f] = [e f]
+# list-changed: [a b c d] [c d e f] ===> [e f]
 fn list-changed { |a b|
 	for i $b {
 		if (not-member $a $i) { put $i }
 	}
 }
-# find the index in the list of the item s
+# list-find: list-find [a b c d] c ===> 2
 fn list-find { |li s|
 	var n = 0
 	for i $li {
@@ -143,7 +143,7 @@ fn list-find { |li s|
 }
 
 ################################################ Utils
-# if-external { a } { b } -- if external command exists run {a}, otherwise {b}
+# if-external prog { a } { b } -- if external command exists run {a}, otherwise {b}
 fn if-external { |prog fcn @ofcn|
 	if (has-external $prog) { 
 		try { $fcn } catch e { print "\n---> Could't run: "; pprint $fcn[def]; pprint $e[reason] } 
@@ -196,7 +196,7 @@ fn hexstring { |@n|
 		put (repeat-each $@n { printf '%X' (randint 0 16) })
 	}
 }
-fn external_edit_command { # edit current command in editor
+fn external_edit_command { # edit current command in editor, from @Kurtis-Rader
 	var temp-file = (path:temp-file '*.elv')
 	print $edit:current-command > $temp-file
 	try {
