@@ -49,15 +49,19 @@ fn is-number	{|x| eq (kind-of $x) !!float64 }
 fn is-nil		{|x| eq $x $nil }
 
 ################################################ filtering functions
+# filter { |i| == 0 $i} [0 1 0 1 0 1] = [0 0 0]
 fn filter {|func~ @in|
 	each {|item| if (func $item) { put $item }} $@in
 }
+# filter-out { |i| == 0 $i} [0 1 0 1 0 1] = [1 1]
 fn filter-out {|func~ @in|
 	each {|item| if (not (func $item)) { put $item }} $@in
 }
+# filter-re 'a|b' ['a' 'b' 'c' 'd' 'e'] = ['a' 'b']
 fn filter-re {|re @in|
 	each {|item| if (is-match $item $re) { put $item } } $@in
 }
+# filter-re-out 'a|b' ['a' 'b' 'c' 'd' 'e'] = ['c' 'd' 'e']
 fn filter-re-out {|re @in|
 	each {|item| if (not-match $item $re) { put $item } } $@in
 }
@@ -175,9 +179,9 @@ fn do-if-path { |paths func~|
 		} 
 	} $paths
 }
-# check-paths -- checks all paths are valid
+# check-paths -- checks all paths are valid, remove any that aren't
 fn check-paths {
-	each {|p| if (not (is-path $p)) { remove-from-path $p; echo (styled "🥺—"$p" in $paths no longer exists…" bg-red) } } $paths
+	each {|p| if (not-path $p) { remove-from-path $p; echo (styled "🥺—"$p" in $paths no longer exists…" bg-red) } } $paths
 }
 fn elvish-updates { 
 	var sep = "----------------------------"
@@ -206,4 +210,9 @@ fn external_edit_command { # edit current command in editor, from @Kurtis-Rader
 		file:close $temp-file
 		rm $temp-file[name]
 	}
+}
+# eip in out file -- edit in place
+# replace all occurences of in with out in file
+fn eip { |in out file|
+	ruby -pi -e 'gsub(/'$in'/, '''$out''')' $file
 }
