@@ -202,15 +202,16 @@ fn hexstring { |@n|
 		put (repeat-each $@n { printf '%X' (randint 0 16) })
 	}
 }
-fn external_edit_command { # edit current command in editor, from @Kurtis-Rader
-	var temp-file = (path:temp-file '*.elv')
-	print $edit:current-command > $temp-file
+# edit current command in editor, from @Kurtis-Rader
+fn external-edit-command {
+	var temp-file = (os:temp-file '*.elv')
+	echo $edit:current-command > $temp-file
 	try {
-		eval $E:EDITOR' '$temp-file[name]' </dev/tty >/dev/tty 2>&1'
-		set edit:current-command = (slurp < $temp-file[name])[..-1]
-	} catch {
+		$E:EDITOR $temp-file[name] </dev/tty >/dev/tty 2>&1
+		set edit:current-command = (str:trim-right (slurp < $temp-file[name]) " \n")
+	} finally {
 		file:close $temp-file
-		rm $temp-file[name]
+		os:remove $temp-file[name]
 	}
 }
 # eip in out file -- edit in place

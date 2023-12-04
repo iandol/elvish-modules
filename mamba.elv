@@ -23,6 +23,7 @@
 # Example:
 # ```
 # ~> use mamba
+# ~> set mamba:cmd = 'micromamba' # can use conda/mamba/micromamba
 # ~> set mamba:root = ~/micromamba
 # ~> mamba:list
 # Mamba ENVS in /Users/jdoe/micromamba/envs: 
@@ -39,6 +40,7 @@ use re
 use path
 use ./cmds # my utility module
 
+var cmd = 'micromamba' # which tool, can be conda, mamba or micromamba
 var root = $E:HOME/micromamba # can be reassigned after module load
 
 # =========================== spawn zsh and find differences in env after
@@ -46,7 +48,7 @@ var root = $E:HOME/micromamba # can be reassigned after module load
 # =========================== zsh-processed variables
 # =========================== TODO: backup any old values?
 fn set-zsh-envs { |script|
-	var x = [(eval 'zsh -c "fe=$(env|sort);. '$script';ne=$(env|sort);echo $fe;echo ''=+=+='';echo $ne"')]
+	var x = [(eval 'zsh -ic "fe=$(env|sort);. '$script';ne=$(env|sort);echo $fe;echo ''=+=+='';echo $ne"')]
 	var n = (cmds:list-find $x '=+=+=')
 	var a = $x[0..$n]
 	var b = $x[(+ $n 1)..-1]
@@ -95,14 +97,14 @@ fn process-script {|@in|
 
 # =========================== list environments
 fn list {
-	echo "Mamba ENVS in "$root"/envs: "
+	echo "Conda/Mamba ENVS in "$root"/envs: "
 	get-venvs
 }
 
 # =========================== deactivate function
 fn deactivate {
 	var in = []
-	try { var in = [(micromamba shell deactivate -s zsh)] } catch { }
+	try { var in = [(eval $cmd' shell deactivate -s zsh')] } catch { }
 	if (cmds:not-empty $in) { process-script $in }
 	each {|in| unset-env $in } [(str:split '→' $E:ZSH_MAMBA_ADD)]
 	each {|in| unset-env $in } [ZSH_MAMBA_ADD _THIS_ENV VIRTUAL_ENV MAMBA_ENV CONDA_DEFAULT_ENV CONDA_PREFIX CONDA_PROMPT_MODIFIER CONDA_SHLVL]
@@ -119,7 +121,7 @@ fn deactivate {
 		set-env PYTHONHOME $E:_OLD_PYTHONHOME
 		unset-env _OLD_PYTHONHOME
 	}
-	echo (styled "Mamba Deactivated!" bold italic magenta)
+	echo (styled "Conda/Mamba Deactivated!" bold italic magenta)
 }
 
 # =========================== activate function
@@ -128,7 +130,7 @@ fn activate {|name|
 		deactivate # lets deactivate first
 		set-env '_OLD_PATH' $E:PATH
 		var in = []
-		try { set in = [(micromamba shell activate -s zsh $name)] } catch { }
+		try { set in = [(eval $cmd' shell activate -s zsh '$name)] } catch { }
 		if (cmds:not-empty $in) { process-script $in }
 		set-env CONDA_PREFIX $root/envs/$name
 		set-env CONDA_DEFAULT_ENV $name
@@ -138,7 +140,7 @@ fn activate {|name|
 			set-env _OLD_PYTHONHOME $E:PYTHONHOME
 			unset-env PYTHONHOME
 		}
-		echo (styled "Mamba Environment « "$name" » Activated!" bold italic magenta)
+		echo (styled "Conda/Mamba environment « "$name" » activated!" bold italic magenta)
 	} else { echo "Environment "$name" not found." }
 }
 set edit:completion:arg-completer[mamba:activate] = {|@args| get-venvs }
