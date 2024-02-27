@@ -202,6 +202,10 @@ fn hexstring { |@n|
 		put (repeat-each $@n { printf '%X' (randint 0 16) })
 	}
 }
+fn protect-brackets { |in|
+	var out = (re:replace '<' '&lt;' $in)
+	put (re:replace '>' '&gt;' $out)
+}
 # edit current command in editor, from @Kurtis-Rader
 fn external-edit-command {
 	var temp-file = (os:temp-file '*.elv')
