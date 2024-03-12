@@ -35,9 +35,9 @@ fn is-member	{|li s| has-value $li $s }
 fn not-member	{|li s| not (has-value $li $s) }
 fn is-match		{|s re| re:match $re $s }
 fn not-match	{|s re| not (re:match $re $s) }
-fn is-path		{|p| os:is-dir &follow-symlink=true $p }
+fn is-path		{|p| os:is-dir &follow-symlink=$true $p }
 fn not-path		{|p| not (is-path $p) }
-fn is-file		{|p| os:is-regular &follow-symlink=true $p }
+fn is-file		{|p| os:is-regular &follow-symlink=$true $p }
 fn not-file		{|p| not (is-file $p) }
 fn is-zero		{|n| == 0 $n }
 fn is-one		{|n| == 1 $n }
