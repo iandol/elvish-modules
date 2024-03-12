@@ -10,6 +10,7 @@ use str
 use path
 use file
 use platform
+use os
 echo (styled "…loading cmds module…" bold italic yellow)
 
 ################################################ Platform shortcuts
@@ -28,15 +29,15 @@ fn neg			{|n| < $n 0 }
 
 ################################################ IS
 # inspired by https://github.com/crinklywrappr/rivendell 
-fn is-empty		{|li| == (count $li) 0 }
-fn not-empty	{|li| not (== (count $li) 0) }
+fn is-empty		{|in| == (count $in) 0 }
+fn not-empty	{|in| not (== (count $in) 0) }
 fn is-member	{|li s| has-value $li $s }
 fn not-member	{|li s| not (has-value $li $s) }
 fn is-match		{|s re| re:match $re $s }
 fn not-match	{|s re| not (re:match $re $s) }
-fn is-path		{|p| path:is-dir &follow-symlink $p }
+fn is-path		{|p| os:is-dir &follow-symlink=true $p }
 fn not-path		{|p| not (is-path $p) }
-fn is-file		{|p| path:is-regular &follow-symlink $p }
+fn is-file		{|p| os:is-regular &follow-symlink=true $p }
 fn not-file		{|p| not (is-file $p) }
 fn is-zero		{|n| == 0 $n }
 fn is-one		{|n| == 1 $n }
@@ -90,8 +91,8 @@ fn listify { |@in| # test to take either stdin or pipein
 }
 
 ################################################ list functions
-fn prepend	{ |li args| put (put $@args $@li) }
-fn append	{ |li args| put (put $@li $@args) }
+fn prepend	{ |item li| put [(flatten $li) $item] }
+fn append	{ |item li| put [$item (flatten $li)] }
 fn concat	{ |l1 l2| put (flatten $l1) (flatten $l2) }
 fn pluck	{ |li n| put (flatten $li[..$n]) (flatten $li[(inc $n)..]) }
 fn get		{ |li n| put $li[$n] } # put A B C D | cmds:get [(all)] 1
@@ -146,6 +147,14 @@ fn list-find { |li s|
 		if (eq $i $s) { put $n }
 		set n = (+ $n 1)
 	}
+}
+# This function takes a file path and a map, and serializes the map to JSON and saves it to the file
+fn serialise {|file map|
+	put $map | to-json > $file
+}
+# This function takes a file path, reads the JSON from the file, and deserializes it to an Elvish map
+fn deserialise {|file|
+	e:cat $file | from-json
 }
 
 ################################################ Utils
