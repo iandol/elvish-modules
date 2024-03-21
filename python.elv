@@ -9,6 +9,7 @@
 # environments in Elvish.  Will not allow invalid Virtual
 # Environments to be activated.
 
+use str
 use ./cmds
 
 var venv-directory = $E:HOME/.venv
