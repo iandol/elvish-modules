@@ -14,6 +14,7 @@ use ./cmds
 var venv-directory = $E:HOME/.venv
 
 fn activate {|name|
+	if (str:has-suffix $venv-directory "/") { set $venv-directory = $venv-directory[0..-1] }
 	var venvs = [(e:ls $venv-directory)]
 
 	var error = ?(var confirmed-name = (
