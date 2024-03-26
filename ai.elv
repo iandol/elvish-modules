@@ -31,6 +31,7 @@ var api_base = "http://localhost:4891"
 var api_key = "NO_API_KEY"
 if (os:is-regular $E:HOME"/.config/elvish/.key") { set api_key = (e:cat $E:HOME"/.config/elvish/.key") }
 var models = [
+	&default="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
 	&hermes="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
 	&hermespro="Hermes-2-Pro-Mistral-7B.Q4_0.gguf"
 	&openorca="mistral-7b-openorca.gguf2.Q4_0.gguf"
@@ -102,7 +103,7 @@ fn show-messages {|&store=main|
 }
 
 # Ask a question via API
-fn ask { |q &model="hermes" &store=main &max=2048 &temperature=0.8|
+fn ask { |q &model="default" &store=main &max=2048 &temperature=0.8|
 	if (has-key $models $model) { set model = $models[$model] }
 	if (==s $model "") { set max = -1 }
 	var messages = (get-messages &store=$store)
