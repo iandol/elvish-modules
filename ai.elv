@@ -17,7 +17,7 @@
 # -------------------------------------------------------------------------
 #
 # Copyright © 2024 Ian Max Andolina - https://github.com/iandol 
-# Version:   1.02
+# Version:   1.03
 # This file is licensed under the terms of the MIT license.
 
 use os
@@ -29,7 +29,7 @@ use ./cmds
 var system_prompt = "You are a helpful technical assistant that replies in english and explains your answers in detail"
 var api_base = "http://localhost:4891"
 var api_key = "NO_API_KEY"
-if (os:is-regular $E:HOME"/.config/elvish/.key") { set api_key = (e:cat $E:HOME"/.config/elvish/.key") }
+if (cmds:is-file $E:HOME"/.config/elvish/store/.key") { set api_key = (e:cat $E:HOME"/.config/elvish/store/.key") }
 var models = [
 	&default="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
 	&hermes="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
