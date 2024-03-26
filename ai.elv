@@ -17,7 +17,7 @@
 # -------------------------------------------------------------------------
 #
 # Copyright © 2024 Ian Max Andolina - https://github.com/iandol 
-# Version:   1.01
+# Version:   1.02
 # This file is licensed under the terms of the MIT license.
 
 use os
@@ -31,18 +31,20 @@ var api_base = "http://localhost:4891"
 var api_key = "NO_API_KEY"
 if (os:is-regular $E:HOME"/.config/elvish/.key") { set api_key = (e:cat $E:HOME"/.config/elvish/.key") }
 var models = [
-	&hermes="Hermes-2-Pro-Mistral-7B.Q4_0.gguf"
-	&hermes2="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf" 
-	&openorca="mistral-7b-openorca.gguf2.Q4_0.gguf" 
-	&instruct="mistral-instruct-7b-2.43bpw.gguf" 
-	&instruct01="mistral-7b-instruct-v0.1.Q4_0.gguf" 
-	&phi="phi-2.Q4_K_S.gguf" 
+	&hermes="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
+	&hermespro="Hermes-2-Pro-Mistral-7B.Q4_0.gguf"
+	&openorca="mistral-7b-openorca.gguf2.Q4_0.gguf"
+	&instruct="mistral-instruct-7b-2.43bpw.gguf"
+	&instructq="mistral-7b-instruct-v0.1.Q4_0.gguf"
+	&phi="phi-2.Q4_K_S.gguf"
 	&gemma="gemma-2b-it-q8_0.gguf"
 	&openaigpt3="gpt-3.5-turbo"
 	&ormistral="mistralai/mistral-7b-instruct:free"
 ]
 var msg-folder = $E:HOME"/.config/elvish/store/"
+var debug = $false
 
+# Get general info about this module
 fn info {
 	echo (styled "Ask AI Parameters" bold italic white)
 	echo (styled "API endpoint: " bold blue)(styled $api_base italic yellow)
@@ -54,7 +56,7 @@ fn info {
 	put (e:ls $msg-folder)
 }
 
-# Get JSON messages from local store
+# Get JSON messages from local store output as elvish map
 fn get-messages {|&store=main|
 	var p = $msg-folder$store".json"
 	var messages
@@ -65,13 +67,16 @@ fn get-messages {|&store=main|
 	put $messages
 }
 
-# Put JSON messages to local store
+# Put messages into JSON local store
 fn put-messages {|messages response &store=main|
 	os:mkdir-all $msg-folder
 	var p = $msg-folder$store".json"
 	var r = [&role=assistant &content=$response]
 	var out = (cmds:append $r $messages)
-	cmds:serialise $p $out
+	if (cmds:not-empty $out) { 
+		cmds:serialise $p $out
+		if $debug { echo "Saved messages to: "$p }
+	}
 }
 
 # Clear messages
@@ -81,9 +86,10 @@ fn clear-messages {|&store=main|
 	os:remove-all $p
 }
 
+# Show messages
 fn show-messages {|&store=main|
 	var p = $msg-folder$store".json"
-	if (cmds:not-path $p) { return }
+	if (cmds:not-file $p) { echo "No messages found in: "$p; return }
 	var messages = (cmds:deserialise $p)
 	each {|m| 
 		if (and (has-key $m "role") (==s $m[role] "user")) {
@@ -91,8 +97,7 @@ fn show-messages {|&store=main|
 			md:show "# "(str:to-upper $m[role])" - "$m[content]
 		} else {
 			md:show $m[content] 
-		}
-		
+		}	
 	} $messages
 }
 
@@ -106,13 +111,16 @@ fn ask { |q &model="hermes" &store=main &max=2048 &temperature=0.8|
 	var message = (put [&model=$model &temperature=(num $temperature) &max_tokens=(num $max) 
 		&n=(num 1) &stream="false" &messages=$messages] | to-json)
 	echo (styled "\n=============Question (model sent: "$model")\n\n"$q[content]" … \n\n" bold yellow italic)
-	var ans = (curl -s -X POST $api_base"/v1/chat/completions" -H "Content-Type: application/json" ^
+	if $debug { echo (styled $message italic blue) }
+	var ans = (curl -s -X POST $api_base"/v1/chat/completions" ^
+		-H "Content-Type: application/json" ^
 		-H "Authorization: Bearer "$api_key ^
 		-d $message | from-json)
 	if (has-key $ans "model") { set model = [(str:split "/" $ans[model])][-1] } else { set model = "?" }
 	echo (styled "\n=============Answer (model used:"$model")\n\n" bold yellow italic)
 	var txt = (cmds:protect-brackets $ans[choices][0][message][content])
 	md:show $txt
+	if $debug { echo (styled (to-string $ans) italic blue) }
 	if (cmds:not-empty $txt) {
 		put-messages $messages $txt &store=$store
 	}
