@@ -2,7 +2,7 @@
 #
 # Copyright © 2023
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.03
+#   Version: 1.04
 #   This file is licensed under the terms of the MIT license.
 
 use re
@@ -91,8 +91,8 @@ fn listify { |@in| # test to take either stdin or pipein
 }
 
 ################################################ list functions
-fn prepend	{ |item li| put [(flatten $li) $item] }
-fn append	{ |item li| put [$item (flatten $li)] }
+fn prepend	{ |item li| put [$item (flatten $li)] }
+fn append	{ |item li| put [(flatten $li) $item] }
 fn concat	{ |l1 l2| put (flatten $l1) (flatten $l2) }
 fn pluck	{ |li n| put (flatten $li[..$n]) (flatten $li[(inc $n)..]) }
 fn get		{ |li n| put $li[$n] } # put A B C D | cmds:get [(all)] 1
