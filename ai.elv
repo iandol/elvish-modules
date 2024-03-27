@@ -3,22 +3,41 @@
 # websites can be used with the OpenAI API to interact with an LLM. This
 # module stores each question and answer in a store, you can use different
 # stores to send different message contexts to the LLM. Optional values are
-# passed using named options like &model and &store. You can store an API
-# key in ~/.config/elvish/.key
+# passed using named options like &model and &store. You can keep an API
+# key in ~/.config/elvish/.key or set it with $ai:api_key
 # API: https://platform.openai.com/docs/api-reference/chat
 # ------------------------------------------------------------------------
-# > ai:ask "Question" &model="hermes" &store="main" &max=2048 &temperature=0.8
+# > set ai:api_key = xxx
+# > set ai:system_prompt = "Please provide detailed point-by-point answers."
+# > ai:ask "My question here" &model="gemma" &store="main" &max=2048 &temperature=0.8
 #
-# model = a map key to $ai:models, default=hermes | store = name of store file
-# (keeps the list of questions) in ~/.config/elvish/store max = max tokens,
-# default 2048 temperature = 0.0 - 2.0, default 0.8
+# optional: model = a map key in $ai:models, default=hermes | store = name of store file
+# (keeps the list of questions) in ~/.config/elvish/store | max = max tokens,
+# default 2048 | temperature = 0.0 - 2.0, default 0.8
 # -------------------------------------------------------------------------
 # > ai:show-messages &store="main" — shows messages in that store
 # -------------------------------------------------------------------------
+# > ai:info
+#  Ask AI Parameters
+#  API endpoint: http://localhost:4891
+#  API key: xxx
+#  Available models: 
+#    Key: instruct Model: mistral-instruct-7b-2.43bpw.gguf
+#    Key: ormistral Model: mistralai/mistral-7b-instruct:free
+#    Key: phi Model: phi-2.Q4_K_S.gguf
+#    Key: hermes Model: Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf
+#    Key: default Model: Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf
+#    Key: gemma Model: gemma-2b-it-q8_0.gguf
+#  System prompt: You are a helpful technical assistant that replies in english and explains your answers in detail
+#  Message stores: 
+#  ▶ curl.json
+#  ▶ main.json
 #
+# -------------------------------------------------------------------------
 # Copyright © 2024 Ian Max Andolina - https://github.com/iandol 
-# Version:   1.03
+# Version:   1.04
 # This file is licensed under the terms of the MIT license.
+# -------------------------------------------------------------------------
 
 use os
 use str
@@ -30,8 +49,7 @@ var system_prompt = "You are a helpful technical assistant that replies in engli
 var api_base = "http://localhost:4891"
 var api_key = "NO_API_KEY"
 if (cmds:is-file $E:HOME"/.config/elvish/store/.key") { set api_key = (e:cat $E:HOME"/.config/elvish/store/.key") }
-var models = [
-	&default="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
+var models = [ # models list
 	&hermes="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
 	&hermespro="Hermes-2-Pro-Mistral-7B.Q4_0.gguf"
 	&openorca="mistral-7b-openorca.gguf2.Q4_0.gguf"
@@ -42,6 +60,8 @@ var models = [
 	&openaigpt3="gpt-3.5-turbo"
 	&ormistral="mistralai/mistral-7b-instruct:free"
 ]
+set models[default] = $models[hermes]
+# message store folder
 var msg-folder = $E:HOME"/.config/elvish/store/"
 var debug = $false
 
@@ -53,7 +73,7 @@ fn info {
 	echo (styled "Available models: " bold blue)
 	each {|m| echo (styled "  Key: " bold blue)(styled $m italic yellow)(styled " Model: " bold blue)(styled $models[$m] italic yellow) } [(keys $models)]
 	echo (styled "System prompt: " bold blue)(styled $system_prompt italic yellow)
-	echo (styled "Message stores: " bold italic white)
+	echo (styled "Message stores: " bold blue)
 	put (e:ls $msg-folder)
 }
 
@@ -104,25 +124,29 @@ fn show-messages {|&store=main|
 
 # Ask a question via API
 fn ask { |q &model="default" &store=main &max=2048 &temperature=0.8|
+	if (cmds:is-empty (str:trim $q " ")) { echo "No question provided, please use > ai:ask \"Your question\""; return }
 	if (has-key $models $model) { set model = $models[$model] }
 	if (==s $model "") { set max = -1 }
-	var messages = (get-messages &store=$store)
 	set q = [&role=user &content=$q]
-	set messages = (cmds:append $q $messages)
-	var message = (put [&model=$model &temperature=(num $temperature) &max_tokens=(num $max) 
+	var messages = (cmds:append $q (get-messages &store=$store))
+	var msg = (put [&model=$model &temperature=(num $temperature) &max_tokens=(num $max) 
 		&n=(num 1) &stream="false" &messages=$messages] | to-json)
 	echo (styled "\n=============Question (model sent: "$model")\n\n"$q[content]" … \n\n" bold yellow italic)
-	if $debug { echo (styled $message italic blue) }
+	if $debug { echo (styled $msg italic blue) }
+	
+	# Call API using curl, convert result from JSON back to elvish map
 	var ans = (curl -s -X POST $api_base"/v1/chat/completions" ^
 		-H "Content-Type: application/json" ^
 		-H "Authorization: Bearer "$api_key ^
-		-d $message | from-json)
+		-d $msg ^
+		| from-json)
+
 	if (has-key $ans "model") { set model = [(str:split "/" $ans[model])][-1] } else { set model = "?" }
 	echo (styled "\n=============Answer (model used:"$model")\n\n" bold yellow italic)
 	var txt = (cmds:protect-brackets $ans[choices][0][message][content])
-	md:show $txt
 	if $debug { echo (styled (to-string $ans) italic blue) }
 	if (cmds:not-empty $txt) {
+		md:show $txt
 		put-messages $messages $txt &store=$store
 	}
 }
