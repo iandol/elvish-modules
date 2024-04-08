@@ -1,11 +1,15 @@
-# OpenAI API / OpenRouter / Local LLM interface This module provides an LLM
-# interface to the OpenAI API. Several local apps as well as several
-# websites can be used with the OpenAI API to interact with an LLM. This
-# module stores each question and answer in a store, you can use different
-# stores to send different message contexts to the LLM. Optional values are
-# passed using named options like &model and &store. You can keep an API
-# key in ~/.config/elvish/.key or set it with $ai:api_key
-# API: https://platform.openai.com/docs/api-reference/chat
+# ------------------------------------------------------------------------
+# OpenAI API (includes OpenRouter.ai & Local LLM interface) This module
+# provides an LLM interface to the OpenAI API. Several local apps as well as
+# several websites can be used with the OpenAI API to interact with an LLM.
+# This module stores each question and answer in a store, you can use
+# different stores to send different message contexts to the LLM. Optional
+# values are passed using named options like &model and &store. You can keep
+# an API key in ~/.config/elvish/.key or set it with $ai:api_key variable.
+#
+# API: https://platform.openai.com/docs/api-reference/chat 
+# Local LLMs: https://gpt4all.io/index.html & https://lmstudio.ai
+#
 # ------------------------------------------------------------------------
 # > set ai:api_key = xxx
 # > set ai:system_prompt = "Please provide detailed point-by-point answers."
@@ -14,8 +18,10 @@
 # optional: model = a map key in $ai:models, default=hermes | store = name of store file
 # (keeps the list of questions) in ~/.config/elvish/store | max = max tokens,
 # default 2048 | temperature = 0.0 - 2.0, default 0.8
+#
 # -------------------------------------------------------------------------
 # > ai:show-messages &store="main" — shows messages in that store
+#
 # -------------------------------------------------------------------------
 # > ai:info
 #  Ask AI Parameters

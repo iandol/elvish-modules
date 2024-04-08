@@ -158,7 +158,7 @@ fn deserialise {|file|
 }
 
 ################################################ Utils
-# if-external prog { a } { b } -- if external command exists run {a}, otherwise {b}
+# if-external prog { a } { b } -- if external command exists run {a}, otherwise optionally {b}
 fn if-external { |prog fcn @ofcn|
 	if (has-external $prog) { 
 		try { $fcn } catch e { print "\n---> Could't run: "; pprint $fcn[def]; pprint $e[reason] } 
@@ -194,12 +194,12 @@ fn do-if-path { |paths func~|
 fn check-paths {
 	each {|p| if (not-path $p) { remove-from-path $p; echo (styled "🥺—"$p" in $paths no longer exists…" bg-red) } } $paths
 }
-fn elvish-updates { 
-	var sep = "----------------------------"
-	curl "https://api.github.com/repos/elves/elvish/commits?per_page=8" |
+fn elvish-updates { |&n=10|
+	var sep = "\n----------------------------"
+	curl "https://api.github.com/repos/elves/elvish/commits?per_page="$n |
 	from-json |
 	all (one) |
-	each {|issue| echo $sep; echo (styled $issue[sha][0..12] bold): (styled (re:replace "\n" "  " $issue[commit][message]) yellow) }
+	each {|issue| echo $sep; echo (styled $issue[sha][0..12]" "$issue[commit][committer][date] bold)":\n" (styled (re:replace "\n" "  " $issue[commit][message]) yellow) }
 }
 fn repeat-each { |n f| # takses a number and a lambda
 	range $n | each {|_| $f }
