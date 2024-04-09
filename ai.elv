@@ -62,11 +62,12 @@ var models = [ # models list
 	&instruct="mistral-instruct-7b-2.43bpw.gguf"
 	&instructq="mistral-7b-instruct-v0.1.Q4_0.gguf"
 	&phi="phi-2.Q4_K_S.gguf"
-	&gemma="gemma-2b-it-q8_0.gguf"
+	&gemma="gemma-1.1-2b-it-Q4_0.gguf"
 	&openaigpt3="gpt-3.5-turbo"
 	&ormistral="mistralai/mistral-7b-instruct:free"
+	&orgemma="google/gemma-7b-it:free"
 ]
-set models[default] = $models[hermes]
+set models[default] = $models[gemma]
 # message store folder
 var msg-folder = $E:HOME"/.config/elvish/store/"
 var debug = $false
