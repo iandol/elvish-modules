@@ -41,7 +41,7 @@
 #
 # -------------------------------------------------------------------------
 # Copyright © 2024 Ian Max Andolina - https://github.com/iandol 
-# Version:   1.04
+# Version:   1.05
 # This file is licensed under the terms of the MIT license.
 # -------------------------------------------------------------------------
 
@@ -56,6 +56,7 @@ var api_base = "http://localhost:4891"
 var api_key = "NO_API_KEY"
 if (cmds:is-file $E:HOME"/.config/elvish/store/.key") { set api_key = (e:cat $E:HOME"/.config/elvish/store/.key") }
 var models = [ # models list
+	&wizard="WizardLM-2-7B-Q5_K_S.gguf"
 	&hermes="Nous-Hermes-2-Mistral-7B-DPO.Q4_0.gguf"
 	&hermespro="Hermes-2-Pro-Mistral-7B.Q4_0.gguf"
 	&openorca="mistral-7b-openorca.gguf2.Q4_0.gguf"
@@ -80,8 +81,8 @@ fn info {
 	echo (styled "Available models: " bold blue)
 	each {|m| echo (styled "  Key: " bold blue)(styled $m italic yellow)(styled " Model: " bold blue)(styled $models[$m] italic yellow) } [(keys $models)]
 	echo (styled "System prompt: " bold blue)(styled $system_prompt italic yellow)
-	echo (styled "Message stores: " bold blue)
-	put (e:ls $msg-folder)
+	echo (styled "Message stores (saved in "$msg-folder"): " bold blue)
+	each {|f| echo (styled "  ⇨ "$f italic yellow) } [(e:ls $msg-folder)]
 }
 
 # Get JSON messages from local store output as elvish map
@@ -110,8 +111,18 @@ fn put-messages {|messages response &store=main|
 # Clear messages
 fn clear-messages {|&store=main|
 	var p = $msg-folder$store".json"
-	echo "Clearing messages from: "$p
+	if (cmds:not-file $p) { echo "No messages found in: "$p; return }
+	echo (styled "Clearing messages from: "$p bold yellow)
 	os:remove-all $p
+}
+
+# Rename message store
+fn archive-messages {|&store=main|
+	var p = $msg-folder$store".json"
+	if (cmds:not-file $p) { echo "No messages found in: "$p; return }
+	var pn = $msg-folder(date -u +%Y-%m-%d-%H-%M-%S)".json"
+	echo (styled "Renaming "$p" to "$pn bold yellow)
+	os:rename $p $pn
 }
 
 # Show messages
