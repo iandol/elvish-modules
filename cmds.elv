@@ -48,6 +48,7 @@ fn is-map		{|x| eq (kind-of $x) map }
 fn is-list		{|x| eq (kind-of $x) list }
 fn is-string	{|x| eq (kind-of $x) string }
 fn is-bool		{|x| eq (kind-of $x) bool }
+fn is-exception	{|x| eq (kind-of $x) exception }
 fn is-number	{|x| eq (kind-of $x) !!float64 }
 fn is-nil		{|x| eq $x $nil }
 
