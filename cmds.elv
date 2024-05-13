@@ -11,7 +11,6 @@ use path
 use file
 use platform
 use os
-use edit
 echo (styled "…loading cmds module…" bold italic yellow)
 
 ################################################ Platform shortcuts
