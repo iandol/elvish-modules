@@ -11,6 +11,7 @@ use path
 use file
 use platform
 use os
+use edit
 echo (styled "…loading cmds module…" bold italic yellow)
 
 ################################################ Platform shortcuts
@@ -218,18 +219,6 @@ fn hexstring	{ |@n|
 fn protect-brackets { |in|
 	var out = (re:replace '<' '&lt;' $in)
 	put (re:replace '>' '&gt;' $out)
-}
-# edit current command in editor, from @Kurtis-Rader
-fn external-edit-command {
-	var temp-file = (os:temp-file '*.elv')
-	echo $edit:current-command > $temp-file
-	try {
-		$E:EDITOR $temp-file[name] </dev/tty >/dev/tty 2>&1
-		set edit:current-command = (str:trim-right (slurp < $temp-file[name]) " \n")
-	} finally {
-		file:close $temp-file
-		os:remove $temp-file[name]
-	}
 }
 # eip in out file -- edit in place
 # replace all occurences of in with out in file
