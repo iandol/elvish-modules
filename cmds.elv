@@ -162,7 +162,8 @@ fn deserialise	{ |file|
 }
 
 ################################################ Utils
-# if-external prog { a } { b } -- if external command exists run {a}, otherwise optionally {b}
+# if-external prog { a } { b } -- if external command 
+# exists run {a}, otherwise optionally run {b}
 fn if-external	{ |prog fcn @ofcn|
 	if (has-external $prog) { 
 		try { $fcn } catch e { print "\n---> Could't run: "; pprint $fcn[def]; pprint $e[reason] } 
@@ -183,7 +184,9 @@ fn prepend-to-path { |path|
 fn remove-from-path { |pathfragment|
 	set paths = [(filter-re-out $paths (re:quote $pathfragment))]
 }
-# do-if-path [paths] { code } -- executes code with first existing path (should be a list)
+# do-if-path [paths] { code } -- executes code with first existing path (should
+# be a list) this is useful if differnt paths for the same thing exist on
+# different systems pass a list of paths and whichever matches run the function
 fn do-if-path { |paths func~|
 	var match = $false
 	if (not (is-list $paths)) { set paths = [$paths] }
@@ -194,10 +197,11 @@ fn do-if-path { |paths func~|
 		} 
 	} $paths
 }
-# check-paths -- checks all paths are valid, remove any that aren't
+# check-paths -- checks all paths are valid, remove any that are invalid
 fn check-paths	{
 	each { |p| if (not-path $p) { remove-from-path $p; echo (styled "🥺—"$p" in $paths no longer exists…" bg-red) } } $paths
 }
+# show n latest updates to elvish repo
 fn elvish-updates { |&n=10|
 	var sep = "\n----------------------------"
 	curl "https://api.github.com/repos/elves/elvish/commits?per_page="$n |
@@ -219,7 +223,7 @@ fn protect-brackets { |in|
 	var out = (re:replace '<' '&lt;' $in)
 	put (re:replace '>' '&gt;' $out)
 }
-# eip in out file -- edit in place
+# eip in out file -- edit in place using ruby
 # replace all occurences of in with out in file
 fn eip			{ |in out file|
 	ruby -pi -e 'gsub(/'$in'/, '''$out''')' $file
