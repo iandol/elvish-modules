@@ -228,3 +228,21 @@ fn protect-brackets { |in|
 fn eip			{ |in out file|
 	ruby -pi -e 'gsub(/'$in'/, '''$out''')' $file
 }
+
+# does what /et/libexec/path_helper does on macOS
+fn path_helper {
+	if (is-path /etc/paths) {
+		each {|p| append-to-path $p } [(e:cat /etc/paths)]
+	}
+	if (is-path /etc/paths.d) {
+		each {|p| append-to-path $p } [(e:cat /etc/paths.d/*[nomatch-ok])]
+	}
+	if (is-path /etc/manpaths) {
+		var mp = (str:replace "\n" ":" (str:trim (cat /etc/manpaths | slurp) "\n"))
+		set-env MANPATH $mp":"$E:MANPATH
+	}
+	if (is-path /etc/manpaths.d) {
+		var mp = (str:replace "\n" ":" (str:trim (cat /etc/manpaths.d/*[nomatch-ok] | slurp) "\n"))
+		set-env MANPATH $mp":"$E:MANPATH
+	}
+}
