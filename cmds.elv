@@ -1,8 +1,8 @@
 # General Elvish utility functions
 #
-# Copyright © 2024
+# Copyright © 2025
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.05
+#   Version: 1.06
 #   This file is licensed under the terms of the MIT license.
 
 use re
@@ -11,7 +11,12 @@ use path
 use file
 use platform
 use os
-echo (styled "…loading cmds module…" bold italic yellow)
+
+################################################ Prettier echo functions
+fn msg { |@t| echo (styled "👉🏼 "$@t bold italic yellow) }
+fn header1 { |@t| echo (styled "\n\n   🌕===   "$@t"   ===🌕   " bold italic inverse red) }
+fn header2 { |@t| echo (styled "\n\n   🌗===   "$@t"   ===🌓   " bold italic inverse yellow) }
+msg "👉🏼 …loading cmds module…"
 
 ################################################ Platform shortcuts
 fn is-macos		{ eq $platform:os 'darwin' }
