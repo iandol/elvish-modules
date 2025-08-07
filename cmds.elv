@@ -16,7 +16,7 @@ use os
 fn msg { |@t| echo (styled "👉🏼 "$@t bold italic yellow) }
 fn header1 { |@t| echo (styled "\n\n   🌕===   "$@t"   ===🌕   " bold italic inverse red) }
 fn header2 { |@t| echo (styled "\n\n   🌗===   "$@t"   ===🌓   " bold italic inverse yellow) }
-msg "👉🏼 …loading cmds module…"
+msg "…loading cmds module…"
 
 ################################################ Platform shortcuts
 fn is-macos		{ eq $platform:os 'darwin' }
