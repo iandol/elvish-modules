@@ -2,7 +2,7 @@
 #
 # Copyright © 2025
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.07
+#   Version: 1.09
 #   This file is licensed under the terms of the MIT license.
 
 use re
@@ -304,21 +304,30 @@ fn first-version { |s|
 	var @m = (re:find '([0-9]+[.][0-9]+([.][0-9]+)*)' $s)
 	if (not-empty $m) { put $m[0][groups][1][text] } else { put '' }
 }
+# gh-api PATH -- GitHub REST path (no leading slash) parsed into a map or a
+# list, depending on the endpoint (`/releases` is a list, `/releases/latest`
+# a map). `gh api` is tried first because the unauthenticated 60/hour quota is
+# per exit IP and is usually spent; curl is the fallback. Returns [] when both
+# fail, so callers test (has-key …) or (count …) instead of needing try/catch.
+#   gh-api 'repos/OWNER/REPO/actions/workflows/build.yml/runs?branch=master&per_page=1'
+fn gh-api { |path|
+	var m = []
+	if (has-external gh) {
+		try { set m = (gh api $path 2>/dev/null | from-json) } catch { }
+	}
+	if (eq $m []) {
+		try { set m = (curl -fsSL --max-time 30 'https://api.github.com/'$path 2>/dev/null | from-json) } catch { }
+	}
+	var k = (kind-of $m)
+	if (not (or (eq $k 'map') (eq $k 'list'))) { set m = [] }
+	put $m
+}
 # gh-latest OWNER/REPO -- latest GitHub release as a map (tag_name, assets, …).
-# `gh api` is tried first because the unauthenticated 60/hour quota is per exit
-# IP and is usually spent. Returns [&tag_name='' &assets=''] on failure.
+# Returns [&tag_name='' &assets=''] on failure.
 fn gh-latest { |repo|
 	var m = [&tag_name='' &assets='']
-	var tag = ''
-	if (has-external gh) {
-		try { set m = (gh api repos/$repo/releases/latest 2>/dev/null | from-json) } catch { }
-		if (has-key $m tag_name) { set tag = $m[tag_name] }
-	}
-	if (==s $tag '') {
-		set m = [&tag_name='' &assets='']
-		try { set m = (curl -fsSL --max-time 30 'https://api.github.com/repos/'$repo'/releases/latest' 2>/dev/null | from-json) } catch { }
-		if (not (has-key $m tag_name)) { set m = [&tag_name='' &assets=''] }
-	}
+	var r = (gh-api 'repos/'$repo'/releases/latest')
+	if (has-key $r tag_name) { set m = $r }
 	put $m
 }
 # asset-url SRC PATTERN -- browser_download_url of the first asset whose name
