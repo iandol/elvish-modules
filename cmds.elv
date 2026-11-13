@@ -2,7 +2,7 @@
 #
 # Copyright © 2025
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.06
+#   Version: 1.07
 #   This file is licensed under the terms of the MIT license.
 
 use re
@@ -250,4 +250,81 @@ fn path_helper {
 		var mp = (str:replace "\n" ":" (str:trim (cat /etc/manpaths.d/*[nomatch-ok] | slurp) "\n"))
 		set-env MANPATH $mp":"$E:MANPATH
 	}
+}
+
+################################################ Network / release metadata
+# http-probe URL [&timeout=20] -- final HTTP status and Last-Modified of a URL
+# without downloading the body: put (http-probe $url) | get code
+# code '000' means unreachable (DNS/proxy), not "file missing".
+fn http-probe { |url &timeout=20|
+	var r = [&code='000' &lmt='']
+	try {
+		var hdr = (curl -sSIL --max-time $timeout $url 2>&1 | slurp)
+		var @lines = (str:split "\n" $hdr)
+		each {|l|
+			var line = (str:trim-right $l "\r")
+			if (re:match '^(?i)HTTP/[0-9.]+ ' $line) {
+				var @c = (re:find '([1-9][0-9][0-9])' $line)
+				if (not-empty $c) { set r[code] = $c[0][groups][1][text] }
+			} elif (re:match '^(?i)last-modified:' $line) {
+				set r[lmt] = (str:trim-space (re:replace '^(?i)last-modified:' '' $line))
+			}
+		} $lines
+	} catch { }
+	put $r
+}
+# sha256 FILE -- sha256 of a file, '' when neither sha256sum nor shasum exists
+fn sha256 { |f|
+	var out = ''
+	try {
+		if (has-external sha256sum) { set out = (sha256sum $f | slurp) } elif (has-external shasum) { set out = (shasum -a 256 $f | slurp) }
+	} catch { }
+	if (==s $out '') { put ''; return }
+	var @p = (str:split ' ' $out)
+	put $p[0]
+}
+# remote-sha URL [&pattern=…] -- hash recorded in a checksum sidecar, '' if
+# missing. Default pattern takes the first bare 64-hex digest (.sha256sum,
+# .sha256.txt); Xray's .dgst needs &pattern='SHA2-256=[ ]*([0-9a-f]{64})'.
+fn remote-sha { |url &pattern='([0-9a-f]{64})' &timeout=20|
+	var s = ''
+	try { set s = (curl -fsSL --max-time $timeout $url 2>/dev/null | slurp) } catch { }
+	var @m = (re:find $pattern $s)
+	if (not-empty $m) { put $m[0][groups][1][text] } else { put '' }
+}
+# hash-short HASH -- first 12 characters plus an ellipsis, for log lines
+fn hash-short { |s|
+	if (==s $s '') { put '—'; return }
+	var @m = (re:find '^(.{12})' $s)
+	if (not-empty $m) { put $m[0][groups][1][text]"…" } else { put $s }
+}
+# first-version TEXT -- first dotted numeric version in TEXT ('')
+# first-version 'Xray 25.1.30 (Xray, Penetrates Everything.)' = 25.1.30
+fn first-version { |s|
+	var @m = (re:find '([0-9]+[.][0-9]+([.][0-9]+)*)' $s)
+	if (not-empty $m) { put $m[0][groups][1][text] } else { put '' }
+}
+# gh-latest OWNER/REPO -- latest GitHub release as a map (tag_name, assets, …).
+# `gh api` is tried first because the unauthenticated 60/hour quota is per exit
+# IP and is usually spent. Returns [&tag_name='' &assets=''] on failure.
+fn gh-latest { |repo|
+	var m = [&tag_name='' &assets='']
+	var tag = ''
+	if (has-external gh) {
+		try { set m = (gh api repos/$repo/releases/latest 2>/dev/null | from-json) } catch { }
+		if (has-key $m tag_name) { set tag = $m[tag_name] }
+	}
+	if (==s $tag '') {
+		set m = [&tag_name='' &assets='']
+		try { set m = (curl -fsSL --max-time 30 'https://api.github.com/repos/'$repo'/releases/latest' 2>/dev/null | from-json) } catch { }
+		if (not (has-key $m tag_name)) { set m = [&tag_name='' &assets=''] }
+	}
+	put $m
+}
+# asset-url SRC PATTERN -- browser_download_url of the first asset whose name
+# matches PATTERN, '' when none does. SRC is a gh-latest map.
+fn asset-url { |src pat|
+	var url = ''
+	each {|a| if (and (==s $url '') (re:match $pat $a[name])) { set url = $a[browser_download_url] } } $src[assets]
+	put $url
 }
