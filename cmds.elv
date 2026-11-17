@@ -2,7 +2,7 @@
 #
 # Copyright © 2025
 #   Ian Max Andolina - https://github.com/iandol
-#   Version: 1.09
+#   Version: 1.10
 #   This file is licensed under the terms of the MIT license.
 
 use re
@@ -84,8 +84,9 @@ fn cond			{ |v1 v2 cond|
 		put $v2
 	}
 }
-
+################################################
 ################################################ pipeline functions
+################################################
 fn flatten		{ |@in| # flatten input recursively
 	each {|in| if (is-list $in) { flatten $in } else { put $in } } $@in
 }
@@ -99,7 +100,9 @@ fn listify		{ |@in| # test to take either stdin or pipein
 	put $list
 }
 
+################################################
 ################################################ list functions
+################################################
 fn prepend		{ |item li| put [$item (flatten $li)] }
 fn append		{ |item li| put [(flatten $li) $item] }
 fn concat		{ |l1 l2| put (flatten $l1) (flatten $l2) }
@@ -118,6 +121,8 @@ fn nth			{ |li n &not-found=$false|
 		drop $n $li | take 1
 	}
 }
+
+################################################
 # list unique: [c b b a] ===> [a b c]
 fn list-unique	{ |li| put (flatten $li) | to-lines | e:sort | e:uniq - | from-lines }
 # list-diff: [a b c d] [c d e f] ===> [a b e f]
@@ -135,6 +140,8 @@ fn list-diff	{ |a b|
 		set j = (inc $j)
 	}
 }
+
+################################################
 # list-intersect: [a b c d] [c d e f] ===> [c d]
 fn list-intersect { |a b|
 	for i $b {
@@ -143,12 +150,16 @@ fn list-intersect { |a b|
 		}
 	}
 }
+
+################################################
 # list-changed: [a b c d] [c d e f] ===> [e f]
 fn list-changed { |a b|
 	for i $b {
 		if (not-member $a $i) { put $i }
 	}
 }
+
+################################################
 # list-find: list-find [a b c d] c ===> 2
 fn list-find	{ |li s|
 	var n = 0
@@ -157,16 +168,24 @@ fn list-find	{ |li s|
 		set n = (+ $n 1)
 	}
 }
+
+################################################
 # This function takes a file path and a map, and serializes the map to JSON and saves it to the file
 fn serialise	{ |file map|
 	put $map | to-json > $file
 }
+
+################################################
 # This function takes a file path, reads the JSON from the file, and deserializes it to an Elvish map
 fn deserialise	{ |file|
 	e:cat $file | from-json
 }
 
+################################################
 ################################################ Utils
+################################################
+
+################################################
 # if-external prog { a } { b } -- if external command 
 # exists run {a}, otherwise optionally run {b}
 fn if-external	{ |prog fcn @ofcn|
@@ -177,18 +196,26 @@ fn if-external	{ |prog fcn @ofcn|
 		try { $ofcn } catch e { print "\n---> Could't run: "; pprint $ofcn[def]; pprint $e[reason] } 
 	}
 }
+
+################################################
 # append-to-path [path] -- appends to the path
 fn append-to-path { |path|
 	if (is-path $path) { var @p = (filter-re-out $paths (re:quote $path)); set paths = [ $@p $path ] }
 }
+
+################################################
 # prepend-to-path [path] -- prepends to the path
 fn prepend-to-path { |path|
 	if (is-path $path) { var @p = (filter-re-out $paths (re:quote $path)); set paths = [ $path $@p ] }
 }
+
+################################################
 # remove-from-path [regex] -- removes paths with a given regex pattern
 fn remove-from-path { |pathfragment|
 	set paths = [(filter-re-out $paths (re:quote $pathfragment))]
 }
+
+################################################
 # do-if-path [paths] { code } -- executes code with first existing path (should
 # be a list) this is useful if differnt paths for the same thing exist on
 # different systems pass a list of paths and whichever matches run the function
@@ -202,10 +229,14 @@ fn do-if-path { |paths func~|
 		} 
 	} $paths
 }
+
+################################################
 # check-paths -- checks all paths are valid, remove any that are invalid
 fn check-paths	{
 	each { |p| if (not-path $p) { remove-from-path $p; echo (styled "🥺—"$p" in $paths no longer exists…" bg-red) } } $paths
 }
+
+################################################
 # show n latest updates to elvish repo
 fn elvish-updates { |&n=10|
 	var sep = "\n----------------------------"
@@ -214,9 +245,13 @@ fn elvish-updates { |&n=10|
 	all (one) |
 	each {|issue| echo $sep; echo (styled $issue[sha][0..12]" "$issue[commit][committer][date] bold)":\n" (styled (re:replace "\n" "  " $issue[commit][message]) yellow) }
 }
+
+################################################
 fn repeat-each	{ |n f| # takses a number and a lambda
 	range $n | each {|_| $f }
 }
+
+################################################
 fn hexstring	{ |@n|
 	if (is-empty $n) {
 		put (repeat-each 32 { printf '%X' (randint 0 16) })
@@ -224,6 +259,8 @@ fn hexstring	{ |@n|
 		put (repeat-each $@n { printf '%X' (randint 0 16) })
 	}
 }
+
+################################################
 fn protect-brackets { |in|
 	var out = (re:replace '<' '&lt;' $in)
 	put (re:replace '>' '&gt;' $out)
@@ -234,6 +271,7 @@ fn eip			{ |in out file|
 	ruby -pi -e 'gsub(/'$in'/, '''$out''')' $file
 }
 
+################################################
 # does what /et/libexec/path_helper does on macOS
 fn path_helper {
 	if (is-path /etc/paths) {
@@ -252,7 +290,11 @@ fn path_helper {
 	}
 }
 
+################################################
 ################################################ Network / release metadata
+################################################
+
+################################################
 # http-probe URL [&timeout=20] -- final HTTP status and Last-Modified of a URL
 # without downloading the body: put (http-probe $url) | get code
 # code '000' means unreachable (DNS/proxy), not "file missing".
@@ -273,6 +315,8 @@ fn http-probe { |url &timeout=20|
 	} catch { }
 	put $r
 }
+
+################################################
 # sha256 FILE -- sha256 of a file, '' when neither sha256sum nor shasum exists
 fn sha256 { |f|
 	var out = ''
@@ -283,6 +327,8 @@ fn sha256 { |f|
 	var @p = (str:split ' ' $out)
 	put $p[0]
 }
+
+################################################
 # remote-sha URL [&pattern=…] -- hash recorded in a checksum sidecar, '' if
 # missing. Default pattern takes the first bare 64-hex digest (.sha256sum,
 # .sha256.txt); Xray's .dgst needs &pattern='SHA2-256=[ ]*([0-9a-f]{64})'.
@@ -292,18 +338,24 @@ fn remote-sha { |url &pattern='([0-9a-f]{64})' &timeout=20|
 	var @m = (re:find $pattern $s)
 	if (not-empty $m) { put $m[0][groups][1][text] } else { put '' }
 }
+
+################################################
 # hash-short HASH -- first 12 characters plus an ellipsis, for log lines
 fn hash-short { |s|
 	if (==s $s '') { put '—'; return }
 	var @m = (re:find '^(.{12})' $s)
 	if (not-empty $m) { put $m[0][groups][1][text]"…" } else { put $s }
 }
+
+################################################
 # first-version TEXT -- first dotted numeric version in TEXT ('')
 # first-version 'Xray 25.1.30 (Xray, Penetrates Everything.)' = 25.1.30
 fn first-version { |s|
 	var @m = (re:find '([0-9]+[.][0-9]+([.][0-9]+)*)' $s)
 	if (not-empty $m) { put $m[0][groups][1][text] } else { put '' }
 }
+
+################################################
 # gh-api PATH -- GitHub REST path (no leading slash) parsed into a map or a
 # list, depending on the endpoint (`/releases` is a list, `/releases/latest`
 # a map). `gh api` is tried first because the unauthenticated 60/hour quota is
@@ -322,6 +374,8 @@ fn gh-api { |path|
 	if (not (or (eq $k 'map') (eq $k 'list'))) { set m = [] }
 	put $m
 }
+
+################################################
 # gh-latest OWNER/REPO -- latest GitHub release as a map (tag_name, assets, …).
 # Returns [&tag_name='' &assets=''] on failure.
 fn gh-latest { |repo|
@@ -330,6 +384,8 @@ fn gh-latest { |repo|
 	if (has-key $r tag_name) { set m = $r }
 	put $m
 }
+
+################################################
 # asset-url SRC PATTERN -- browser_download_url of the first asset whose name
 # matches PATTERN, '' when none does. SRC is a gh-latest map.
 fn asset-url { |src pat|
@@ -337,3 +393,43 @@ fn asset-url { |src pat|
 	each {|a| if (and (==s $url '') (re:match $pat $a[name])) { set url = $a[browser_download_url] } } $src[assets]
 	put $url
 }
+
+################################################
+################################################ CACHE GENERATION
+################################################
+# Cache generated integration code (completions, prompts). The generators are
+# external programs whose output only changes when the tool changes, so replay
+# the cached code until the binary's mtime is newer than the cache file.
+# `stat` is used because os:stat does not expose mtime; on macOS it is BSD
+# stat, on Linux GNU stat. Clear with: rm -rf ~/.cache/elvish/completions
+fn stat-mtime {|f|
+	if (eq $platform:os windows) { put 0; return }
+	var out = ''
+	if (eq $platform:os darwin) { set out = (stat -L -f %m $f) } else { set out = (stat -L -c %Y $f) }
+	put (num (str:trim-space $out))
+}
+
+################################################
+fn cached-code {|name bin @cmd|
+	var bp = ''
+	try { set bp = (search-external $bin) } catch { put ''; return }
+	var base = $E:XDG_CACHE_HOME
+	if (==s $base '') { set base = $E:HOME'/.cache' }
+	var dir = $base'/elvish/completions'
+	var file = $dir'/'$name'.elv'
+	var stale = $true
+	if (path:is-regular $file) {
+		set stale = $false
+		try {
+			if (> (stat-mtime $bp) (stat-mtime $file)) { set stale = $true }
+		} catch { set stale = $true }
+	}
+	if $stale {
+		var code = ($bp $@cmd | slurp)
+		if (==s $code '') { put ''; return }
+		os:mkdir-all $dir
+		print $code > $file
+	}
+	put (slurp < $file)
+}
+
